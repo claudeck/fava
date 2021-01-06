@@ -161,6 +161,13 @@ def collapse_account(account_name: str) -> bool:
 
     return False
 
+def label_or_name(name: str, last_segment: bool = False) -> str:
+    """Return label if has label metadata"""
+    label = g.ledger.accounts[name].meta.get('label')
+    if not label:
+        return name.split(':')[-1] if last_segment else name
+    else:
+        return label
 
 FILTERS = [
     balance_children,
@@ -179,4 +186,5 @@ FILTERS = [
     remove_keys,
     should_show,
     units,
+    label_or_name
 ]

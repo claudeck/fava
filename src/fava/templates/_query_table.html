@@ -15,7 +15,7 @@
 {% elif type == "<class 'str'>" %}
 <td>
   {% if name == "account" %}
-  <a href="{{ url_for('account', name=value) }}">{{ value }}</a>
+  <a href="{{ url_for('account', name=value) }}">{{ value|label_or_name }}</a>
   {% elif name == "id" %}
   <a href="#context-{{ value }}">{{ value }}</a>
   {% else %}

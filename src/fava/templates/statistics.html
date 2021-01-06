@@ -42,7 +42,7 @@
       {% set last_entry = ledger.last_entry(account) %}
       {% if last_entry %}
       <tr>
-        <td class="account"><a href="{{ url_for('account', name=account) }}">{{ account }}</a></td>
+        <td class="account"><a href="{{ url_for('account', name=account) }}">{{ account|label_or_name }}</a></td>
         {% if ledger.accounts[account].meta.get('fava-uptodate-indication') %}
         <td data-sort-value="{{ status_sortorder[ledger.account_uptodate_status(account) or ''] }}" class="uptodate-indicator">{{ account_macros.indicator(account) }}</td>
         <td class="uptodate-indicator">{{ account_macros.last_account_activity(account) }}</td>
