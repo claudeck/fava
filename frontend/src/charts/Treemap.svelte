@@ -39,7 +39,7 @@
 
     return `${formatCurrency(val)} ${currency} (${formatPercentage(
       val / rootValue
-    )})<em>${d.data.account}</em>`;
+    )})<em>${d.data.account}</em><em>${d.data.label}</em>`;
   }
 
   /**
@@ -55,6 +55,7 @@
     update(param);
     return { update };
   }
+
 </script>
 
 <svg {width} {height}>

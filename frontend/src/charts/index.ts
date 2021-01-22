@@ -209,6 +209,7 @@ export function scatterplot(json: unknown): ScatterPlot {
 export function hierarchy(json: unknown): HierarchyChart {
   const hierarchyValidator: Validator<AccountHierarchy> = object({
     account: string,
+    label: string,
     balance: record(number),
     children: lazy(() => array(hierarchyValidator)),
   });
