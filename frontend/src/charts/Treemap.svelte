@@ -70,7 +70,7 @@
         x={(d.x1 - d.x0) / 2}
         y={(d.y1 - d.y0) / 2}
         text-anchor="middle">
-        {d.data.account.split(":").pop() || ""}
+        {d.data.label || d.data.account.split(":").pop() || ""}
       </text>
     </g>
   {/each}

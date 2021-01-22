@@ -84,7 +84,7 @@ class ChartModule(FavaModule):
         else:
             tree = self.ledger.root_tree
         return tree.get(account_name).serialise(
-            conversion, self.ledger.price_map, end - ONE_DAY if end else None
+            conversion, self.ledger, end - ONE_DAY if end else None
         )
 
     @listify

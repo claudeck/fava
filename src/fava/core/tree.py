@@ -28,18 +28,20 @@ class TreeNode:
         #: Whether the account has any transactions.
         self.has_txns = False
 
-    def serialise(self, conversion, price_map, end: datetime.date):
+    def serialise(self, conversion, ledger, end: datetime.date):
         """Serialise the account.
 
         Args:
             end: A date to use for cost conversions.
         """
+        price_map = ledger.price_map
         children = [
-            child.serialise(conversion, price_map, end)
+            child.serialise(conversion, ledger, end)
             for child in self.children
         ]
         return {
             "account": self.name,
+            "label": self.label_or_name(ledger),
             "balance_children": cost_or_value(
                 self.balance_children, conversion, price_map, end
             ),
@@ -47,6 +49,13 @@ class TreeNode:
             "children": children,
         }
 
+    def label_or_name(self, ledger):
+        """Return label if has label metadata"""
+        label = ledger.accounts[self.name].meta.get('label')
+        if not label:
+            return self.name.split(':')[-1]
+        else:
+            return label
 
 class Tree(dict):
     """Account tree.
