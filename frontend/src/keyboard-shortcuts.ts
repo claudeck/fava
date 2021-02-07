@@ -1,6 +1,3 @@
-import { once } from "./lib/events";
-import { closeOverlay } from "./stores";
-
 /**
  * Add a tooltip showing the keyboard shortcut over the target element.
  * @param target - The target element to show the tooltip on.
@@ -109,6 +106,27 @@ function keydown(event: KeyboardEvent): void {
 
 document.addEventListener("keydown", keydown);
 
+/** A type to specify a platform-dependent keyboard shortcut. */
+export type KeySpec = string | { key: string; mac: string };
+
+const currentPlatform: "mac" | "key" =
+  typeof navigator !== "undefined" && /Mac/.test(navigator.platform)
+    ? "mac"
+    : "key";
+
+export const modKey = currentPlatform === "mac" ? "Cmd" : "Ctrl";
+
+/**
+ * Get the keyboard key specifier string for the current platform.
+ * @param keySpec - The key spec.
+ */
+export function getKeySpecKey(keySpec: KeySpec): string {
+  if (typeof keySpec === "string") {
+    return keySpec;
+  }
+  return currentPlatform === "mac" ? keySpec.mac : keySpec.key;
+}
+
 /**
  * Bind an event handler to a key.
  * @param key - The key to bind.
@@ -116,9 +134,10 @@ document.addEventListener("keydown", keydown);
  * @returns A function to unbind the keyboard handler.
  */
 export function bindKey(
-  key: string,
+  keySpec: KeySpec,
   handler: KeyboardShortcutAction
 ): () => void {
+  const key = getKeySpecKey(keySpec);
   const sequence = key.split(" ");
   if (sequence.length > 2) {
     // eslint-disable-next-line no-console
@@ -181,9 +200,12 @@ export function initCurrentKeyboardShortcuts(): void {
 export function initGlobalKeyboardShortcuts(): void {
   bindKey("?", () => {
     const hide = showTooltips();
-    once(document, "mousedown", hide);
-    once(document, "keydown", hide);
+    const once = () => {
+      hide();
+      document.removeEventListener("mousedown", once);
+      document.removeEventListener("keydown", once);
+    };
+    document.addEventListener("mousedown", once);
+    document.addEventListener("keydown", once);
   });
-
-  bindKey("Escape", closeOverlay);
 }

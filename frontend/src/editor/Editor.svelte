@@ -1,45 +1,26 @@
 <script>
-  import { CodeMirror } from "../editor";
-
+  import { initReadonlyEditor } from "../codemirror/setup";
   /** @type {string} */
   export let value;
 
-  /** @type {CodeMirror.Editor | undefined} */
-  let editor;
+  const [editor, useEditor] = initReadonlyEditor(value);
 
-  $: if (editor && value !== editor.getValue()) {
-    editor.setValue(value);
-  }
-
-  /**
-   * @param {HTMLElement} div
-   */
-  function initialiseEditor(div) {
-    editor = CodeMirror(div, {
-      readOnly: true,
-      lineNumbers: true,
-      value,
-    });
-    editor.on("changes", (cm) => {
-      value = cm.getValue();
+  $: if (value !== editor.state.doc.toString()) {
+    editor.dispatch({
+      changes: { from: 0, to: editor.state.doc.length, insert: value },
     });
   }
 </script>
 
-<div use:initialiseEditor />
+<div use:useEditor />
 
 <style>
   div {
     width: 100%;
     height: 100%;
   }
-  div :global(.CodeMirror-lines) {
-    border-top: 1px solid var(--color-sidebar-border);
-  }
-  div :global(.CodeMirror) {
+  div :global(.cm-wrap) {
     width: 100%;
     height: 100%;
-    margin: 0;
-    border: 0;
   }
 </style>

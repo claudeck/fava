@@ -119,10 +119,10 @@
 }
 
 .journal .metadata dt {
-  display: inline-block;
   float: left;
   width: auto;
   min-width: 4rem;
+  margin-right: 6px;
   margin-left: 9rem;
   color: var(--color-journal-metadata);
   cursor: pointer;
@@ -135,6 +135,7 @@
 
 .journal p > .num {
   width: 9rem;
+  white-space: pre;
   border-left: 1px solid var(--color-table-border);
 }
 

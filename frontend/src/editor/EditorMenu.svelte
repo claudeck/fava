@@ -1,93 +1,146 @@
 <script>
-  import { createEventDispatcher } from "svelte";
+  import { toggleComment } from "@codemirror/comment";
+  import { foldAll, unfoldAll } from "@codemirror/fold";
 
   import { _ } from "../i18n";
   import { urlFor } from "../helpers";
 
-  /** @type {string[]} */
-  export let sources;
+  import { beancountFormat } from "../codemirror/beancount-format";
+  import { modKey } from "../keyboard-shortcuts";
+  import Key from "./Key.svelte";
+  import { favaOptions, options } from "../stores";
+  import { scrollToLine } from "../codemirror/scroll-to-line";
+  import router from "../router";
+
   /** @type {string} */
   export let file_path;
 
-  const dispatch = createEventDispatcher();
+  /** @type {import("@codemirror/view").EditorView} */
+  export let editor;
+
+  $: sources = [
+    $options.filename,
+    ...$options.include.filter((f) => f !== $options.filename),
+  ];
+  $: insertEntryOptions = $favaOptions["insert-entry"];
+
+  /**
+   *
+   * @param {string} filename
+   * @param {number} [line]
+   */
+  function goToFileAndLine(filename, line) {
+    const url = urlFor("editor", { file_path: filename, line });
+    const shouldLoad = filename !== file_path;
+    router.navigate(url, shouldLoad);
+    if (!shouldLoad && line) {
+      scrollToLine(editor, line);
+      editor.focus();
+    }
+  }
 </script>
 
 <div class="fieldset">
-  <ul class="dropdown">
-    <li>
-      {_("File")}&nbsp;▾
-
+  <div class="dropdown">
+    <span>
+      {_("File")}
       <ul>
         {#each sources as source}
-          <li class:selected={source === file_path}>
-            <a href={urlFor("editor", { file_path: source })}>{source}</a>
+          <li
+            class:selected={source === file_path}
+            on:click={() => goToFileAndLine(source)}
+          >
+            {source}
           </li>
         {/each}
       </ul>
-    </li>
-    <li>
+    </span>
+    <span>
       {_("Edit")}
-      &nbsp;▾
       <ul>
-        <li on:click={() => dispatch("command", "favaFormat")}>
+        <li on:click={() => beancountFormat(editor)}>
           {_("Align Amounts")}
-          <span> <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>d</kbd> </span>
+          <span><Key key={`${modKey}+d`} /></span>
         </li>
-        <li on:click={() => dispatch("command", "favaToggleComment")}>
+        <li on:click={() => toggleComment(editor)}>
           {_("Toggle Comment (selection)")}
-          <span> <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> + <kbd>y</kbd> </span>
+          <span><Key key={`${modKey}+/`} /></span>
         </li>
-        <li on:click={() => dispatch("command", "unfoldAll")}>
+        <li on:click={() => unfoldAll(editor)}>
           {_("Open all folds")}
+          <span><Key key="Ctrl+Alt+]" /></span>
         </li>
-        <li on:click={() => dispatch("command", "foldAll")}>
+        <li on:click={() => foldAll(editor)}>
           {_("Close all folds")}
+          <span><Key key="Ctrl+Alt+[" /></span>
         </li>
       </ul>
-    </li>
-  </ul>
+    </span>
+    {#if insertEntryOptions.length}
+      <span>
+        <code>insert-entry</code>
+        {_("Options")}
+        <ul>
+          {#each insertEntryOptions as opt}
+            <li
+              on:click={() => goToFileAndLine(opt.filename, opt.lineno - 1)}
+              title={`${opt.filename}:${opt.lineno}`}
+            >
+              {opt.re} <span>{opt.date}</span>
+            </li>
+          {/each}
+        </ul>
+      </span>
+    {/if}
+  </div>
   <slot />
 </div>
 
 <style>
-  li {
-    cursor: pointer;
-  }
-
   .fieldset {
-    height: var(--source-editor-fieldset-height);
-    padding-left: 0.5em;
+    height: 3rem;
+    background: var(--color-sidebar-background);
     border-bottom: 1px solid var(--color-sidebar-border);
   }
 
   .dropdown {
     display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
     height: 100%;
-    margin: 0;
+    margin-right: 0.5rem;
   }
 
-  .dropdown .selected::before {
+  .selected::before {
     content: "›";
   }
 
-  .dropdown > li {
-    position: relative;
-    height: var(--source-editor-fieldset-height);
-    margin-right: 10px;
-    line-height: var(--source-editor-fieldset-height);
-    cursor: default;
+  li {
+    padding: 2px 10px;
+    cursor: pointer;
   }
 
-  .dropdown > li > ul {
+  li span {
+    float: right;
+  }
+
+  .dropdown > span {
+    padding: 0.7rem 0.5rem;
+    cursor: pointer;
+  }
+
+  .dropdown > span::after {
+    content: "▾";
+  }
+
+  ul {
     position: absolute;
-    top: var(--source-editor-fieldset-height);
     z-index: var(--z-index-floating-ui);
     display: none;
     width: 500px;
     max-height: 400px;
-    margin-left: -10px;
+    margin: 0.75rem 0 0 -0.5rem;
     overflow-y: auto;
-    line-height: 1.5;
     background-color: var(--color-background);
     border: 1px solid var(--color-background-darker);
     border-bottom-right-radius: 3px;
@@ -95,15 +148,12 @@
     box-shadow: 0 3px 6px var(--color-transparent-black);
   }
 
-  .dropdown > li > ul > li {
-    padding: 2px 10px;
+  li:hover,
+  span:hover {
+    background-color: var(--color-background-darkest);
   }
 
-  .dropdown > li > ul > li span {
-    float: right;
-  }
-
-  .dropdown li:hover > ul {
+  span:hover > ul {
     display: block;
   }
 </style>

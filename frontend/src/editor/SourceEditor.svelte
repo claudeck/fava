@@ -3,50 +3,43 @@
 
   import { put, get } from "../api";
   import { bindKey } from "../keyboard-shortcuts";
+  import { log_error } from "../log";
   import { notify } from "../notifications";
   import router from "../router";
-  import { errorCount } from "../stores";
-  import { CodeMirror, sourceEditorOptions, initSourceEditor } from "../editor";
+  import { errorCount, favaOptions } from "../stores";
 
+  import { initBeancountEditor } from "../codemirror/setup";
+  import { scrollToLine } from "../codemirror/scroll-to-line";
   import EditorMenu from "./EditorMenu.svelte";
   import SaveButton from "./SaveButton.svelte";
+  import { beancountFormat } from "../codemirror/beancount-format";
 
-  /** @type {{source: string, file_path: string, sha256sum: string, sources: string[]}} */
+  /** @type {{source: string, file_path: string, sha256sum: string}} */
   export let data;
 
-  /** @type {CodeMirror.Editor | undefined} */
-  let editor;
-
   let changed = false;
+  const onDocChanges = () => {
+    changed = true;
+  };
 
-  let value = "";
-  let file_path = "";
   let sha256sum = "";
-  /** @type {string[]} */
-  let sources = [];
-
   let saving = false;
 
-  $: if (editor && value !== editor.getValue()) {
-    editor.setValue(value);
-  }
-
-  async function save() {
-    if (!editor) {
-      return;
-    }
-
+  /**
+   * Save the contents of the editor.
+   * @param {import("@codemirror/view").EditorView} cm
+   */
+  async function save(cm) {
     saving = true;
     try {
       sha256sum = await put("source", {
-        file_path,
-        source: value,
+        file_path: data.file_path,
+        source: cm.state.doc.toString(),
         sha256sum,
       });
       changed = false;
-      editor.focus();
-      editor.getDoc().markClean();
-      errorCount.set(await get("errors"));
+      cm.focus();
+      get("errors").then((count) => errorCount.set(count), log_error);
     } catch (error) {
       notify(error, "error");
     } finally {
@@ -54,92 +47,79 @@
     }
   }
 
+  const [editor, useEditor] = initBeancountEditor(data.source, onDocChanges, [
+    {
+      key: "Control-s",
+      mac: "Meta-s",
+      run: () => {
+        save(editor);
+        return true;
+      },
+    },
+  ]);
+
   function checkEditorChanges() {
-    if (editor && !editor.getDoc().isClean()) {
-      return "There are unsaved changes. Are you sure you want to leave?";
-    }
-    return null;
+    return changed
+      ? "There are unsaved changes. Are you sure you want to leave?"
+      : null;
   }
 
   onMount(() => {
     sha256sum = data.sha256sum;
-    file_path = data.file_path;
-    sources = data.sources;
+    router.interruptHandlers.add(checkEditorChanges);
 
     // keybindings when the focus is outside the editor
     const unbind = [
-      ...["Control+s", "Meta+s"].map((key) =>
-        bindKey(key, (event) => {
-          event.preventDefault();
-          save();
-        })
-      ),
-      ...["Control+d", "Meta+d"].map((key) =>
-        bindKey(key, (event) => {
-          event.preventDefault();
-          editor?.execCommand("favaFormat");
-        })
-      ),
+      bindKey({ key: "Control+s", mac: "Meta+s" }, (event) => {
+        event.preventDefault();
+        save(editor);
+      }),
+      bindKey({ key: "Control+d", mac: "Meta+d" }, (event) => {
+        event.preventDefault();
+        beancountFormat(editor);
+      }),
     ];
 
-    router.interruptHandlers.add(checkEditorChanges);
+    editor.focus();
+    const opts = $favaOptions["insert-entry"].filter(
+      (f) => f.filename === data.file_path
+    );
+    const line = parseInt(
+      new URLSearchParams(window.location.search).get("line") ?? "0",
+      10
+    );
+    if (line > 0) {
+      scrollToLine(editor, line);
+    } else if (opts.length > 0) {
+      const last = opts[opts.length - 1];
+      scrollToLine(editor, last.lineno - 1);
+    }
 
     return () => {
       router.interruptHandlers.delete(checkEditorChanges);
       unbind.forEach((u) => u());
     };
   });
-
-  /**
-   * @param {HTMLElement} div
-   */
-  function sourceEditor(div) {
-    value = data.source;
-    const options = {
-      ...sourceEditorOptions(save),
-      autofocus: true,
-      value,
-    };
-    editor = CodeMirror(div, options);
-    initSourceEditor(editor);
-    editor.on("changes", (cm) => {
-      value = cm.getValue();
-      changed = !cm.getDoc().isClean();
-    });
-  }
-
-  /**
-   * @param {CustomEvent<string>} ev
-   */
-  function command(ev) {
-    editor?.execCommand(ev.detail);
-  }
 </script>
 
-<form class="fixed-fullsize-container" on:submit|preventDefault={save}>
-  <EditorMenu {file_path} {sources} on:command={command}>
+<form
+  class="fixed-fullsize-container"
+  on:submit|preventDefault={() => save(editor)}
+  use:useEditor
+>
+  <EditorMenu file_path={data.file_path} {editor}>
     <SaveButton {changed} {saving} />
   </EditorMenu>
-  <div use:sourceEditor />
 </form>
 
 <style>
   form {
-    background: var(--color-sidebar-background);
+    display: flex;
+    flex-direction: column;
   }
-  div {
-    position: fixed;
-    top: calc(var(--header-height) + var(--source-editor-fieldset-height));
-    bottom: 0;
+  form :global(.cm-wrap) {
+    flex: 1;
     width: 100%;
-  }
-  div :global(.CodeMirror-lines) {
-    border-top: 1px solid var(--color-sidebar-border);
-  }
-  div :global(.CodeMirror) {
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    border: 0;
+    height: calc(100% - 3rem);
   }
 </style>

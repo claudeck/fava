@@ -5,12 +5,13 @@
  * load the content of the page and replace the <article> contents with them.
  */
 
-import { Writable } from "svelte/store";
+import { get, Writable } from "svelte/store";
 
 import { delegate, Events } from "./lib/events";
 import { fetch, handleText } from "./lib/fetch";
+import { log_error } from "./log";
 import { notify } from "./notifications";
-import { conversion, favaAPI, interval, urlHash } from "./stores";
+import { conversion, favaOptions, interval, urlHash } from "./stores";
 import { showCharts } from "./stores/chart";
 import { account_filter, fql_filter, time_filter } from "./stores/filters";
 import { urlSyncedParams } from "./stores/url";
@@ -84,7 +85,7 @@ class Router extends Events<"page-loaded"> {
         window.location.pathname !== this.pathname ||
         window.location.search !== this.search
       ) {
-        this.loadURL(window.location.href, false);
+        this.loadURL(window.location.href, false).catch(log_error);
       }
     });
 
@@ -97,7 +98,7 @@ class Router extends Events<"page-loaded"> {
    */
   navigate(url: string, load = true): void {
     if (load) {
-      this.loadURL(url);
+      this.loadURL(url).catch(log_error);
     } else {
       window.history.pushState(null, "", url);
       this.updateState();
@@ -119,7 +120,7 @@ class Router extends Events<"page-loaded"> {
       }
     }
 
-    const getUrl = new URL(url);
+    const getUrl = new URL(url, window.location.href);
     getUrl.searchParams.set("partial", "true");
 
     const svg = document.querySelector(".fava-icon");
@@ -137,9 +138,17 @@ class Router extends Events<"page-loaded"> {
         article.innerHTML = content;
       }
       this.trigger("page-loaded");
-      urlHash.set(window.location.hash.slice(1));
+      const hash = window.location.hash.slice(1);
+      urlHash.set(hash);
+      if (hash) {
+        document.getElementById(hash)?.scrollIntoView();
+      }
     } catch (error) {
-      notify(`Loading ${url} failed: ${error.message}`, "error");
+      if (error instanceof Error) {
+        notify(`Loading ${url} failed: ${error.message}`, "error");
+      } else {
+        log_error(error);
+      }
     } finally {
       svg?.classList.remove("loading");
     }
@@ -215,7 +224,7 @@ class Router extends Events<"page-loaded"> {
    * Reload the page.
    */
   reload(): void {
-    this.loadURL(window.location.href, false);
+    this.loadURL(window.location.href, false).catch(log_error);
   }
 }
 
@@ -259,10 +268,11 @@ function syncStoreValueToUrl<T extends boolean | string>(
  * Set initial values from URL and update URL on store changes
  */
 export function initSyncedStoreValues(): void {
+  const opts = get(favaOptions);
   syncStoreValueToUrl(account_filter, "account", "");
   syncStoreValueToUrl(fql_filter, "filter", "");
   syncStoreValueToUrl(time_filter, "time", "");
-  syncStoreValueToUrl(interval, "interval", favaAPI.favaOptions.interval);
-  syncStoreValueToUrl(conversion, "conversion", favaAPI.favaOptions.conversion);
+  syncStoreValueToUrl(interval, "interval", opts.interval);
+  syncStoreValueToUrl(conversion, "conversion", opts.conversion);
   syncStoreValueToUrl(showCharts, "charts", true, false);
 }

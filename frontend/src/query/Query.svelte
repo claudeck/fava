@@ -2,6 +2,7 @@
   import { onMount, tick } from "svelte";
 
   import { get } from "../api";
+  import { operatingCurrenciesWithConversion } from "../stores";
   import { query_shell_history, addToHistory } from "../stores/query";
   import { getFilterParams } from "../stores/filters";
   import { parseQueryChart } from "../charts";
@@ -9,6 +10,7 @@
   import Chart from "../charts/Chart.svelte";
   import QueryEditor from "./QueryEditor.svelte";
   import QueryLinks from "./QueryLinks.svelte";
+  import ReadonlyQueryEditor from "./ReadonlyQueryEditor.svelte";
 
   let query_string = "";
 
@@ -47,7 +49,10 @@
     }
     get("query_result", { query_string: query, ...getFilterParams() }).then(
       (res) => {
-        const chart = parseQueryChart(res.chart);
+        const chart = parseQueryChart(
+          res.chart,
+          $operatingCurrenciesWithConversion
+        );
         setResult(query, { result: { chart, table: res.table } });
       },
       (error) => {
@@ -75,14 +80,12 @@
   });
 </script>
 
-<QueryEditor bind:value={query_string} on:submit={submit} />
+<QueryEditor bind:value={query_string} {submit} />
 <div>
   {#each query_result_array as [history_item, { result, error }] (history_item)}
     <details class:error bind:this={resultElems[history_item]}>
       <summary on:click={() => click(history_item)}>
-        <pre>
-          <code>{history_item}</code>
-        </pre>
+        <ReadonlyQueryEditor value={history_item} />
         {#if result}
           <span class="spacer" />
           <QueryLinks query={history_item} />

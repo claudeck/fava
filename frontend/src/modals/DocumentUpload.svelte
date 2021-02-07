@@ -3,7 +3,7 @@
   import { notify } from "../notifications";
   import { put } from "../api";
   import { _ } from "../i18n";
-  import { favaAPIStore } from "../stores";
+  import { options } from "../stores";
   import { account, hash, files } from "../document-upload";
 
   import ModalBase from "./ModalBase.svelte";
@@ -13,7 +13,7 @@
   let form;
 
   $: shown = !!$files.length;
-  $: documents = $favaAPIStore.options.documents;
+  $: documents = $options.documents;
 
   async function submit() {
     await Promise.all(
@@ -47,11 +47,11 @@
   <form bind:this={form} on:submit|preventDefault={submit}>
     <h3>{_("Upload file(s)")}:</h3>
     {#each $files as file}
-      <div class="fieldset"><input bind:value={file.name} /></div>
+      <div class="fieldset"><input class="file" bind:value={file.name} /></div>
     {/each}
     <div class="fieldset">
       <label>
-        {_("Documents folder")}:
+        <span>{_("Documents folder")}:</span>
         <select name="folder">
           {#each documents as folder}
             <option>{folder}</option>
@@ -59,10 +59,9 @@
         </select>
       </label>
     </div>
-    <div class="fieldset">
+    <div class="fieldset account">
       <label>
-        {_("Account")}:
-
+        <span>{_("Account")}:</span>
         <AccountInput bind:value={$account} />
       </label>
       <input type="hidden" name="hash" value={$hash} />
@@ -70,3 +69,21 @@
     <button type="submit">{_("Upload")}</button>
   </form>
 </ModalBase>
+
+<style>
+  input.file {
+    width: 100%;
+  }
+
+  .fieldset {
+    display: "block";
+  }
+
+  .fieldset :global(span):first-child {
+    margin-right: 8px;
+  }
+
+  .fieldset.account :global(span):last-child {
+    min-width: 25rem;
+  }
+</style>
