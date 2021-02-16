@@ -7,7 +7,7 @@
   import { preprocessData, isDuplicate } from "./helpers";
 
   import Extract from "./Extract.svelte";
-  import AccountInput from "../entry-forms/AccountInput.svelte";
+  import FileList from "./FileList.svelte";
   import { notify } from "../notifications";
   import DocumentPreview from "../documents/DocumentPreview.svelte";
 
@@ -25,6 +25,13 @@
 
   /** @type {Map<string,import('../entries').Entry[]>} */
   let extractCache = new Map();
+
+  $: importableFiles = preprocessedData.filter(
+    (i) => i.importers[0].importer_name !== ""
+  );
+  $: otherFiles = preprocessedData.filter(
+    (i) => i.importers[0].importer_name === ""
+  );
 
   function preventNavigation() {
     return extractCache.size > 0
@@ -61,6 +68,10 @@
    * @param {string} filename
    */
   async function remove(filename) {
+    // eslint-disable-next-line
+    if (!confirm(_("Delete this file?"))) {
+      return;
+    }
     const removed = await deleteDocument(filename);
     if (removed) {
       preprocessedData = preprocessedData.filter(
@@ -113,61 +124,36 @@
 />
 <div class="fixed-fullsize-container">
   <div class="filelist">
-    {#each preprocessedData as file}
-      <div
-        class="header"
-        title={file.name}
-        on:click|self={() => {
-          selected = selected === file.name ? null : file.name;
-        }}
-      >
-        {file.basename}
-        <button
-          class="round"
-          on:click={() => remove(file.name)}
-          type="button"
-          title={_("Delete")}
-          tabindex={-1}
-        >
-          ×
-        </button>
+    {#if preprocessedData.length === 0}
+      <p>{_("No files were found for import.")}</p>
+    {/if}
+    {#if importableFiles.length > 0}
+      <div class="importable-files">
+        <h2>{_("Importable Files")}</h2>
+        <FileList
+          files={importableFiles}
+          {extractCache}
+          bind:selected
+          moveFile={move}
+          removeFile={remove}
+          {extract}
+        />
       </div>
-      {#each file.importers as info}
-        <div class="flex-row">
-          <AccountInput bind:value={info.account} />
-          <input size={40} bind:value={info.newName} />
-          <button
-            type="button"
-            on:click={() => move(file.name, info.account, info.newName)}
-          >
-            {"Move"}
-          </button>
-          {#if info.importer_name}
-            <button
-              type="button"
-              title="{_('Extract')} with importer {info.importer_name}"
-              on:click={() => extract(file.name, info.importer_name)}
-            >
-              {extractCache.get(`${file.name}:${info.importer_name}`)
-                ? _("Continue")
-                : _("Extract")}
-            </button>
-            {#if extractCache.get(`${file.name}:${info.importer_name}`)}
-              <button
-                type="button"
-                on:click={() => {
-                  extractCache.delete(`${file.name}:${info.importer_name}`);
-                  extractCache = extractCache;
-                }}
-              >
-                {_("Clear")}
-              </button>
-            {/if}
-            {info.importer_name}
-          {:else}{_("No importer matched this file.")}{/if}
-        </div>
-      {/each}
-    {/each}
+      <hr />
+    {/if}
+    {#if otherFiles.length > 0}
+      <details open={importableFiles.length === 0}>
+        <summary>{_("Non-importable Files")}</summary>
+        <FileList
+          files={otherFiles}
+          {extractCache}
+          bind:selected
+          moveFile={move}
+          removeFile={remove}
+          {extract}
+        />
+      </details>
+    {/if}
   </div>
   {#if selected}
     <div>
@@ -177,15 +163,6 @@
 </div>
 
 <style>
-  .header {
-    padding: 0.5rem;
-    margin: 0.5rem 0;
-    cursor: pointer;
-    background-color: var(--color-table-header-background);
-  }
-  .header button {
-    float: right;
-  }
   .fixed-fullsize-container {
     display: flex;
     align-items: stretch;
@@ -196,5 +173,8 @@
   }
   .filelist {
     padding: 1rem;
+  }
+  .importable-files {
+    padding-bottom: 0.8rem;
   }
 </style>
