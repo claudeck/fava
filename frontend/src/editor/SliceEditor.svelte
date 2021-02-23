@@ -1,18 +1,15 @@
-<script>
+<script lang="ts">
   import { put } from "../api";
+  import { initBeancountEditor } from "../codemirror/setup";
   import { notify } from "../notifications";
   import router from "../router";
   import { closeOverlay } from "../stores";
 
   import SaveButton from "./SaveButton.svelte";
-  import { initBeancountEditor } from "../codemirror/setup";
 
-  /** @type {string} */
-  export let slice;
-  /** @type {string} */
-  export let entry_hash;
-  /** @type {string} */
-  export let sha256sum;
+  export let slice: string;
+  export let entry_hash: string;
+  export let sha256sum: string;
 
   let changed = false;
   const onDocChanges = () => {

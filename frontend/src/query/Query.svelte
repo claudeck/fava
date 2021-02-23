@@ -1,38 +1,34 @@
-<script>
+<script lang="ts">
   import { onMount, tick } from "svelte";
 
   import { get } from "../api";
-  import { operatingCurrenciesWithConversion } from "../stores";
-  import { query_shell_history, addToHistory } from "../stores/query";
-  import { getFilterParams } from "../stores/filters";
   import { parseQueryChart } from "../charts";
-
   import Chart from "../charts/Chart.svelte";
+  import { operatingCurrenciesWithConversion } from "../stores";
+  import { getFilterParams } from "../stores/filters";
+  import { addToHistory, query_shell_history } from "../stores/query";
+
   import QueryEditor from "./QueryEditor.svelte";
   import QueryLinks from "./QueryLinks.svelte";
   import ReadonlyQueryEditor from "./ReadonlyQueryEditor.svelte";
 
   let query_string = "";
 
-  /** @type {Record<string,HTMLElement>} */
-  const resultElems = {};
+  const resultElems: Record<string, HTMLElement> = {};
 
-  /** @typedef {{result?: { table: string, chart: ReturnType<parseQueryChart> }, error?: unknown}} ResultType
-  /** @type {Record<string,ResultType>} */
-  const query_results = {};
+  type ResultType = {
+    result?: { table: string; chart: ReturnType<typeof parseQueryChart> };
+    error?: unknown;
+  };
 
-  $: query_result_array = $query_shell_history.map(
-    /** @returns {[string, ResultType]} */ (item) => [
-      item,
-      query_results[item] || {},
-    ]
-  );
+  const query_results: Record<string, ResultType> = {};
 
-  /**
-   * @param {string} query
-   * @param {ResultType} res
-   */
-  async function setResult(query, res) {
+  $: query_result_array = $query_shell_history.map((item): [
+    string,
+    ResultType
+  ] => [item, query_results[item] || {}]);
+
+  async function setResult(query: string, res: ResultType) {
     addToHistory(query);
     query_results[query] = res;
     await tick();
@@ -61,10 +57,7 @@
     );
   }
 
-  /**
-   * @param {string} query
-   */
-  function click(query) {
+  function click(query: string) {
     if (!query_results[query]) {
       query_string = query;
       submit();

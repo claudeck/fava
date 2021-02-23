@@ -32,7 +32,6 @@ module.exports = {
     "airbnb-typescript/base",
     "plugin:@typescript-eslint/recommended",
     "prettier",
-    "prettier/@typescript-eslint",
   ],
   env: { browser: true },
   parserOptions: {
@@ -40,17 +39,17 @@ module.exports = {
     project: ["./tsconfig.json", "./tsconfig.confs.json"],
     extraFileExtensions: [".svelte"],
   },
+  settings: {
+    // eslint-disable-next-line
+    "svelte3/typescript": require("typescript"),
+  },
   rules: {
     ...airbnbConfigOverrides,
+    ...sortImports,
+    "@typescript-eslint/consistent-type-imports": "warn",
     curly: ["error", "all"],
   },
   overrides: [
-    {
-      files: "*.js",
-      rules: {
-        "@typescript-eslint/explicit-module-boundary-types": 0,
-      },
-    },
     {
       files: "*.svelte",
       processor: "svelte3/svelte3",
@@ -66,9 +65,6 @@ module.exports = {
       extends: [
         "plugin:@typescript-eslint/recommended-requiring-type-checking",
       ],
-      rules: {
-        ...sortImports,
-      },
     },
   ],
 };

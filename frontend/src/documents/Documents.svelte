@@ -1,21 +1,20 @@
-<script>
+<script lang="ts">
   import { moveDocument } from "../api";
+  import AccountInput from "../entry-forms/AccountInput.svelte";
   import { _ } from "../i18n";
-  import router from "../router";
-
   import { basename } from "../lib/paths";
   import { stratify } from "../lib/tree";
-
-  import AccountInput from "../entry-forms/AccountInput.svelte";
   import ModalBase from "../modals/ModalBase.svelte";
+  import router from "../router";
+
   import Accounts from "./Accounts.svelte";
-  import Table from "./Table.svelte";
   import DocumentPreview from "./DocumentPreview.svelte";
+  import Table from "./Table.svelte";
 
-  /** @typedef {{account: string, filename: string, date: string}} Document */
+  type Document = { account: string; filename: string; date: string };
+  type MoveDetails = { account: string; filename: string; newName: string };
 
-  /** @type {Document[]} */
-  export let data;
+  export let data: Document[];
 
   $: node = stratify(
     new Set(data.map((e) => e.account)),
@@ -23,16 +22,13 @@
     (name) => ({ name })
   );
 
-  /** @type {Document} */
-  let selected;
-  /** @type {{account: string, filename: string, newName: string} | null} */
-  let moving = null;
+  let selected: Document;
+  let moving: MoveDetails | null = null;
 
   /**
    * Rename the selected document with <F2>.
-   * @param {KeyboardEvent} ev
    */
-  function keyup(ev) {
+  function keyup(ev: KeyboardEvent) {
     if (ev.key === "F2" && selected) {
       moving = { ...selected, newName: basename(selected.filename) };
     }

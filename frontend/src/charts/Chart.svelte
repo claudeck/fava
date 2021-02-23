@@ -1,40 +1,39 @@
-<script>
+<script lang="ts">
   import { setContext } from "svelte";
   import { writable } from "svelte/store";
+  import type { Writable } from "svelte/store";
 
   import { _ } from "../i18n";
   import { keyboardShortcut } from "../keyboard-shortcuts";
   import {
     chartCurrency,
-    lineChartMode,
     hierarchyChartMode,
+    lineChartMode,
     showCharts,
   } from "../stores/chart";
 
-  import ChartLegend from "./ChartLegend.svelte";
   import BarChart from "./BarChart.svelte";
+  import ChartLegend from "./ChartLegend.svelte";
   import HierarchyContainer from "./HierarchyContainer.svelte";
   import LineChart from "./LineChart.svelte";
   import ScatterPlot from "./ScatterPlot.svelte";
 
+  import type { NamedChartTypes } from ".";
+
   /**
    * The chart to render.
-   * @type {import(".").NamedChartTypes}
    */
-  export let chart;
+  export let chart: NamedChartTypes;
 
   /**
    * Width of the chart.
-   * @type {number}
    */
-  let width;
+  let width: number;
 
-  /** @type {import("svelte/store").Writable<string[]>} */
-  const currencies = writable([]);
+  const currencies: Writable<string[]> = writable([]);
   setContext("chart-currencies", currencies);
 
-  /** @type {import("svelte/store").Writable<[string,string][]>} */
-  const legend = writable([]);
+  const legend: Writable<[string, string][]> = writable([]);
   setContext("chart-legend", legend);
 
   $: if (chart) {

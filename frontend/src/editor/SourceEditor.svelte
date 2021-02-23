@@ -1,21 +1,21 @@
-<script>
+<script lang="ts">
+  import type { EditorView } from "@codemirror/view";
   import { onMount } from "svelte";
 
-  import { put, get } from "../api";
+  import { get, put } from "../api";
+  import { beancountFormat } from "../codemirror/beancount-format";
+  import { scrollToLine } from "../codemirror/scroll-to-line";
+  import { initBeancountEditor } from "../codemirror/setup";
   import { bindKey } from "../keyboard-shortcuts";
   import { log_error } from "../log";
   import { notify } from "../notifications";
   import router from "../router";
   import { errorCount, favaOptions } from "../stores";
 
-  import { initBeancountEditor } from "../codemirror/setup";
-  import { scrollToLine } from "../codemirror/scroll-to-line";
   import EditorMenu from "./EditorMenu.svelte";
   import SaveButton from "./SaveButton.svelte";
-  import { beancountFormat } from "../codemirror/beancount-format";
 
-  /** @type {{source: string, file_path: string, sha256sum: string}} */
-  export let data;
+  export let data: { source: string; file_path: string; sha256sum: string };
 
   let changed = false;
   const onDocChanges = () => {
@@ -27,9 +27,8 @@
 
   /**
    * Save the contents of the editor.
-   * @param {import("@codemirror/view").EditorView} cm
    */
-  async function save(cm) {
+  async function save(cm: EditorView) {
     saving = true;
     try {
       sha256sum = await put("source", {
