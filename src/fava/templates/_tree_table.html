@@ -9,9 +9,10 @@
     {% if invert %}
       {% set diff = -diff %}
     {% endif %}
+    {% set percent = "{:.2%}".format(diff / cost_num) %}
     {% if diff %}
     <span class="diff{{ ' positive' if diff > 0 else ' negative' }}" title="{{ cost_num|format_currency(currency, invert=invert) }} {{ currency }}">
-      ({{ diff|format_currency(currency) }})
+      {{ percent }} - {{ diff|format_currency(currency) }}
     </span>
     {% endif %}
   {% endif %}
