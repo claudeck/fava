@@ -160,7 +160,7 @@ def label_or_name(name: str, last_segment: bool = False) -> str:
     """Return label if has label metadata"""
     label = g.ledger.accounts[name].meta.get('label')
     if not label:
-        label = g.ledger.custom_labels[name]
+        label = g.ledger.custom_labels.get(name)
 
     if not label:
         return name.split(':')[-1] if last_segment else name

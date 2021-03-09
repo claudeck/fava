@@ -152,8 +152,8 @@
 }
 
 .tree-table .diff {
-  margin-right: 3px;
-  font-size: 0.8em;
+  margin-right: 0px;
+  font-size: 0.7em;
   color: var(--color-budget-zero);
   white-space: nowrap;
 }
