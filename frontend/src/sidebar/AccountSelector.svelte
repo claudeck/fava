@@ -1,16 +1,13 @@
-<script>
-  import { _ } from "../i18n";
-  import { accounts } from "../stores";
-  import router from "../router";
-  import { urlFor } from "../helpers";
+<script lang="ts">
   import AutocompleteInput from "../AutocompleteInput.svelte";
+  import { urlFor } from "../helpers";
+  import { _ } from "../i18n";
+  import router from "../router";
+  import { accounts } from "../stores";
 
   let value = "";
 
-  /**
-   * @param {CustomEvent<HTMLInputElement>} ev
-   */
-  function select(ev) {
+  function select(ev: CustomEvent<HTMLInputElement>) {
     if (value) {
       router.navigate(urlFor(`account/${value}`));
       ev.detail.blur();

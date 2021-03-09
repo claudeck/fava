@@ -1,15 +1,16 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
 
   import { bindKey } from "../keyboard-shortcuts";
-  import { parseChartData } from ".";
   import { activeChart, showCharts } from "../stores/chart";
 
-  import ConversionAndInterval from "./ConversionAndInterval.svelte";
   import Chart from "./Chart.svelte";
+  import ConversionAndInterval from "./ConversionAndInterval.svelte";
 
-  /** @type {import(".").NamedChartTypes[]} */
-  let charts = [];
+  import { parseChartData } from ".";
+  import type { NamedChartTypes } from ".";
+
+  let charts: NamedChartTypes[] = [];
 
   onMount(() => {
     charts = parseChartData();

@@ -1,22 +1,20 @@
-<script>
+<script lang="ts">
   import { toggleComment } from "@codemirror/comment";
   import { foldAll, unfoldAll } from "@codemirror/fold";
-
-  import { _ } from "../i18n";
-  import { urlFor } from "../helpers";
+  import type { EditorView } from "@codemirror/view";
 
   import { beancountFormat } from "../codemirror/beancount-format";
-  import { modKey } from "../keyboard-shortcuts";
-  import Key from "./Key.svelte";
-  import { favaOptions, options } from "../stores";
   import { scrollToLine } from "../codemirror/scroll-to-line";
+  import { urlFor } from "../helpers";
+  import { _ } from "../i18n";
+  import { modKey } from "../keyboard-shortcuts";
   import router from "../router";
+  import { favaOptions, options } from "../stores";
 
-  /** @type {string} */
-  export let file_path;
+  import Key from "./Key.svelte";
 
-  /** @type {import("@codemirror/view").EditorView} */
-  export let editor;
+  export let file_path: string;
+  export let editor: EditorView;
 
   $: sources = [
     $options.filename,
@@ -24,12 +22,7 @@
   ];
   $: insertEntryOptions = $favaOptions["insert-entry"];
 
-  /**
-   *
-   * @param {string} filename
-   * @param {number} [line]
-   */
-  function goToFileAndLine(filename, line) {
+  function goToFileAndLine(filename: string, line?: number) {
     const url = urlFor("editor", { file_path: filename, line });
     const shouldLoad = filename !== file_path;
     router.navigate(url, shouldLoad);

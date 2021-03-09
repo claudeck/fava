@@ -11,13 +11,14 @@ import { lintKeymap } from "@codemirror/lint";
 import { bracketMatching } from "@codemirror/matchbrackets";
 import { rectangularSelection } from "@codemirror/rectangular-selection";
 import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
-import { EditorState, Extension, Prec } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
+import { EditorState } from "@codemirror/state";
+import type { KeyBinding } from "@codemirror/view";
 import {
   drawSelection,
   EditorView,
   highlightActiveLine,
   highlightSpecialChars,
-  KeyBinding,
   keymap,
   placeholder,
 } from "@codemirror/view";
@@ -36,7 +37,7 @@ const baseExtensions = [
   drawSelection(),
   EditorState.allowMultipleSelections.of(true),
   indentOnInput(),
-  Prec.fallback(defaultHighlightStyle),
+  defaultHighlightStyle,
   bracketMatching(),
   closeBrackets(),
   autocompletion(),
@@ -81,11 +82,7 @@ function setup(
  * A basic readonly editor.
  */
 export function initReadonlyEditor(value: string): EditorAndAction {
-  return setup(value, [
-    baseExtensions,
-    Prec.fallback(defaultHighlightStyle),
-    EditorView.editable.of(false),
-  ]);
+  return setup(value, [baseExtensions, EditorView.editable.of(false)]);
 }
 
 /**
@@ -96,7 +93,7 @@ export class BeancountTextarea extends HTMLTextAreaElement {
     super();
     const [view] = setup(this.value, [
       beancount,
-      Prec.fallback(defaultHighlightStyle),
+      defaultHighlightStyle,
       EditorView.editable.of(false),
     ]);
     this.parentNode?.insertBefore(view.dom, this);
@@ -113,7 +110,6 @@ export function initBeancountEditor(
   commands: KeyBinding[]
 ): EditorAndAction {
   return setup(value, [
-    baseExtensions,
     beancount,
     indentUnit.of(" ".repeat(get(favaOptions).indent)),
     keymap.of(commands),
@@ -122,6 +118,7 @@ export function initBeancountEditor(
         onDocChanges(update.state);
       }
     }),
+    baseExtensions,
   ]);
 }
 
@@ -131,7 +128,7 @@ export function initBeancountEditor(
 export function initReadonlyQueryEditor(value: string): EditorAndAction {
   return setup(value, [
     bql,
-    Prec.fallback(defaultHighlightStyle),
+    defaultHighlightStyle,
     EditorView.editable.of(false),
   ]);
 }
@@ -146,7 +143,6 @@ export function initQueryEditor(
   submit: () => void
 ): EditorAndAction {
   return setup(value, [
-    baseExtensions,
     bql,
     EditorView.updateListener.of((update) => {
       if (update.docChanged) {
@@ -164,5 +160,6 @@ export function initQueryEditor(
       },
     ]),
     placeholder(_placeholder),
+    baseExtensions,
   ]);
 }

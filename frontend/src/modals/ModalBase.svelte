@@ -1,21 +1,19 @@
-<script>
+<script lang="ts">
   /**
    * A modal dialog.
    *
    * This tries to follow https://www.w3.org/TR/wai-aria-practices-1.1/#dialog_modal.
    */
-  import { closeOverlay } from "../stores";
   import { keyboardShortcut } from "../keyboard-shortcuts";
   import { attemptFocus, getFocusableElements } from "../lib/focus";
+  import { closeOverlay } from "../stores";
 
   export let shown = false;
   export let focus = "";
   export let closeHandler = closeOverlay;
 
-  /** @param {HTMLElement} el */
-  function handleFocus(el) {
-    /** @param {KeyboardEvent} ev */
-    function keydown(ev) {
+  function handleFocus(el: HTMLElement) {
+    function keydown(ev: KeyboardEvent) {
       if (ev.key === "Tab") {
         const focusable = getFocusableElements(el);
         const first = focusable[0];
