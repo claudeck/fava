@@ -142,6 +142,7 @@ class FavaLedger:
         "root_account",
         "root_tree",
         "_watcher",
+        "custom_labels"
     ] + MODULES
 
     #: List of all (unfiltered) entries.
@@ -265,6 +266,18 @@ class FavaLedger:
         self.filters = Filters(self.options, self.fava_options)
 
         self.filter(True)
+
+        self.custom_labels = self.get_custom_labels(entries_by_type[Custom])
+
+    def get_custom_labels(self, custom_entries: List[Custom]) -> Dict[str, str]:
+        """Get custom labels options"""
+        custom_label_entries = [
+            entry for entry in custom_entries if entry.type == "custom-label"
+        ]
+        return {
+            entry.values[0].value: entry.values[1].value
+            for entry in custom_label_entries
+        }
 
     # pylint: disable=attribute-defined-outside-init
     def filter(
