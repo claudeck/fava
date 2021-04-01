@@ -33,6 +33,9 @@ Click to copy the balance directives to the clipboard:
 {% macro account_name(ledger, account_name, last_segment=False) %}
 <a href="{{ url_for('account', name=account_name) }}" class="account">
   {{- account_name|label_or_name(last_segment) -}}
+  {% if ledger.accounts[account_name].meta.get('type') == 'CASH' %}
+  $
+  {% endif %}
 </a>
 {% if account_name and ledger.accounts[account_name].meta.get('fava-uptodate-indication') %}
 

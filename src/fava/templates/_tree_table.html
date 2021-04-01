@@ -18,7 +18,8 @@
   {% endif %}
 {% endmacro %}
 
-{% macro tree(account_node, invert=False) %}
+{% macro tree(account_node, invert=False, show_type_info=False) %}
+{% set cash = namespace(value=0) %}
 <tree-table>
 <ol class="flex-table tree-table{{ ' two-currencies' if ledger.options.operating_currency|length > 1 else '' }}" title="{{ _('Hold Shift while clicking to expand all children.
 Hold Ctrl or Cmd while clicking to expand one level.') }}">
@@ -36,6 +37,10 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
   {% set balance_children = account.balance_children|cost_or_value(ledger.end_date) %}
   {% set cost = account.balance|cost if g.conversion == 'at_value' else {} %}
   {% set cost_children = account.balance_children|cost if g.conversion == 'at_value' else {} %}
+  {% if ledger.accounts[account.name].meta.get('type') == 'CASH' and 'CNY' in cost %}
+    {% set cost_num = cost.pop('CNY', 0) %}
+    {% set cash.value = cash.value + cost_num %}
+  {% endif %}
   <li{{ ' class=toggled' if account.name|collapse_account else '' }}>
     <p{{ ' class=has-balance' if not balance.is_empty() else '' }}>
     <span class="account-cell depth-{{ loop.depth0 }} droptarget{{ ' has-children' if account.children else '' }}" data-account-name="{{ account.name }}">
@@ -69,6 +74,9 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
   {% endfor %}
 </ol>
 </tree-table>
+{% if show_type_info %}
+<div>现金类资产: {{ cash.value|format_currency('CNY', False) }} CNY</div>
+{% endif %}
 {% endmacro %}
 
 {% macro render_budget(budget, currency, number=0) %}
