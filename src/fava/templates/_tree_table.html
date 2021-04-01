@@ -20,6 +20,7 @@
 
 {% macro tree(account_node, invert=False, show_type_info=False) %}
 {% set cash = namespace(value=0) %}
+{% set equity = namespace(value=0) %}
 <tree-table>
 <ol class="flex-table tree-table{{ ' two-currencies' if ledger.options.operating_currency|length > 1 else '' }}" title="{{ _('Hold Shift while clicking to expand all children.
 Hold Ctrl or Cmd while clicking to expand one level.') }}">
@@ -40,6 +41,14 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
   {% if ledger.accounts[account.name].meta.get('type') == 'CASH' and 'CNY' in cost %}
     {% set cost_num = cost.pop('CNY', 0) %}
     {% set cash.value = cash.value + cost_num %}
+  {% endif %}
+  {% if ledger.accounts[account.name].meta.get('type') == 'FUND' and 'CNY' in cost %}
+    {% set cost_num = balance.pop('CNY', 0) %}
+    {% set equity.value = equity.value + cost_num %}
+  {% endif %}
+  {% if ledger.accounts[account.name].meta.get('type') == 'STOCK' and 'CNY' in cost %}
+    {% set cost_num = balance.pop('CNY', 0) %}
+    {% set equity.value = equity.value + cost_num %}
   {% endif %}
   <li{{ ' class=toggled' if account.name|collapse_account else '' }}>
     <p{{ ' class=has-balance' if not balance.is_empty() else '' }}>
@@ -75,7 +84,11 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
 </ol>
 </tree-table>
 {% if show_type_info %}
-<div>现金类资产: {{ cash.value|format_currency('CNY', False) }} CNY</div>
+<div>
+  现金类资产: {{ cash.value|format_currency('CNY', False) }} CNY &nbsp;&nbsp;|&nbsp;&nbsp; 
+  权益类资产: {{ equity.value|format_currency('CNY', False) }} CNY &nbsp;&nbsp;|&nbsp;&nbsp;
+  仓位: {{ "{:.2%}".format(equity.value / (cash.value + equity.value)) }}
+</div>
 {% endif %}
 {% endmacro %}
 
