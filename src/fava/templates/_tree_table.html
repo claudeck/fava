@@ -85,9 +85,11 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
 </tree-table>
 {% if show_type_info %}
 <div>
+  {% if cash.value != 0 and equity.value != 0 %}
   现金类资产: {{ cash.value|format_currency('CNY', False) }} CNY &nbsp;&nbsp;|&nbsp;&nbsp; 
   权益类资产: {{ equity.value|format_currency('CNY', False) }} CNY &nbsp;&nbsp;|&nbsp;&nbsp;
   仓位: {{ "{:.2%}".format(equity.value / (cash.value + equity.value)) }}
+  {% endif %}
 </div>
 {% endif %}
 {% endmacro %}
