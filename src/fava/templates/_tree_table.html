@@ -20,7 +20,7 @@
 
 {% macro tree(account_node, invert=False, show_type_info=False) %}
 {% set cash = namespace(value=0) %}
-{% set equity = namespace(value=0) %}
+{% set equity = namespace(stock=0, fund=0) %}
 <tree-table>
 <ol class="flex-table tree-table{{ ' two-currencies' if ledger.options.operating_currency|length > 1 else '' }}" title="{{ _('Hold Shift while clicking to expand all children.
 Hold Ctrl or Cmd while clicking to expand one level.') }}">
@@ -44,11 +44,11 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
   {% endif %}
   {% if ledger.accounts[account.name].meta.get('type') == 'FUND' and 'CNY' in cost %}
     {% set cost_num = balance.pop('CNY', 0) %}
-    {% set equity.value = equity.value + cost_num %}
+    {% set equity.fund = equity.fund + cost_num %}
   {% endif %}
   {% if ledger.accounts[account.name].meta.get('type') == 'STOCK' and 'CNY' in cost %}
     {% set cost_num = balance.pop('CNY', 0) %}
-    {% set equity.value = equity.value + cost_num %}
+    {% set equity.stock = equity.stock + cost_num %}
   {% endif %}
   <li{{ ' class=toggled' if account.name|collapse_account else '' }}>
     <p{{ ' class=has-balance' if not balance.is_empty() else '' }}>
@@ -83,13 +83,39 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
   {% endfor %}
 </ol>
 </tree-table>
-{% if show_type_info %}
+{% set equity_total = equity.fund + equity.stock %}
+{% set total = cash.value + equity_total %}
+{% if show_type_info and cash.value != 0 and equity_total != 0 %}
 <div>
-  {% if cash.value != 0 and equity.value != 0 %}
-  现金类资产: {{ cash.value|format_currency('CNY', False) }} CNY &nbsp;&nbsp;|&nbsp;&nbsp; 
-  权益类资产: {{ equity.value|format_currency('CNY', False) }} CNY &nbsp;&nbsp;|&nbsp;&nbsp;
-  仓位: {{ "{:.2%}".format(equity.value / (cash.value + equity.value)) }}
-  {% endif %}
+  <table>
+    <thead>
+      <th>资产类型</th>
+      <th>CNY</th>
+      <th>占比</th>
+    </thead>
+    <tbody>
+      <tr>
+        <td>现金类资产</td>
+        <td class="num">{{ cash.value|format_currency('CNY', False) }}</td>
+        <td class="num">{{ "{:.2%}".format(cash.value / total) }}</td>
+      </tr>
+      <tr>
+        <td>基金类资产</td>
+        <td class="num">{{ (equity.fund)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ "{:.2%}".format(equity.fund / total) }}</td>
+      </tr>
+      <tr>
+        <td>股票类资产</td>
+        <td class="num">{{ (equity.stock)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ "{:.2%}".format(equity.stock / total) }}</td>
+      </tr>
+      <tr>
+        <td>权益类资产</td>
+        <td class="num">{{ (equity_total)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ "{:.2%}".format(equity_total / total) }}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 {% endif %}
 {% endmacro %}
