@@ -10,7 +10,7 @@
 
 <div class="row">
   <div class="column">
-    {{ tree_table.tree(root_tree_closed.get(ledger.options['name_assets'])) }}
+    {{ tree_table.tree(root_tree_closed.get(ledger.options['name_assets']), False, True) }}
   </div>
   <div class="column">
     {{ tree_table.tree(root_tree_closed.get(ledger.options['name_liabilities']), invert=invert) }}

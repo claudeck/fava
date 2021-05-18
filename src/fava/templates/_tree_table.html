@@ -18,7 +18,9 @@
   {% endif %}
 {% endmacro %}
 
-{% macro tree(account_node, invert=False) %}
+{% macro tree(account_node, invert=False, show_type_info=False) %}
+{% set cash = namespace(value=0) %}
+{% set equity = namespace(stock=0, stock_cost=0, fund=0, fund_cost=0) %}
 <tree-table>
 <ol class="flex-table tree-table{{ ' two-currencies' if ledger.options.operating_currency|length > 1 else '' }}" title="{{ _('Hold Shift while clicking to expand all children.
 Hold Ctrl or Cmd while clicking to expand one level.') }}">
@@ -36,6 +38,22 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
   {% set balance_children = account.balance_children|cost_or_value(ledger.end_date) %}
   {% set cost = account.balance|cost if g.conversion == 'at_value' else {} %}
   {% set cost_children = account.balance_children|cost if g.conversion == 'at_value' else {} %}
+  {% if ledger.accounts[account.name].meta.get('type') == 'CASH' and 'CNY' in cost %}
+    {% set cost_num = cost.pop('CNY', 0) %}
+    {% set cash.value = cash.value + cost_num %}
+  {% endif %}
+  {% if ledger.accounts[account.name].meta.get('type') == 'FUND' and 'CNY' in cost %}
+    {% set balance_num = balance.pop('CNY', 0) %}
+    {% set equity.fund = equity.fund + balance_num %}
+    {% set cost_num = cost.pop('CNY', 0) %}
+    {% set equity.fund_cost = equity.fund_cost + cost_num %}
+  {% endif %}
+  {% if ledger.accounts[account.name].meta.get('type') == 'STOCK' and 'CNY' in cost %}
+    {% set balance_num = balance.pop('CNY', 0) %}
+    {% set equity.stock = equity.stock + balance_num %}
+    {% set cost_num = cost.pop('CNY', 0) %}
+    {% set equity.stock_cost = equity.stock_cost + cost_num %}
+  {% endif %}
   <li{{ ' class=toggled' if account.name|collapse_account else '' }}>
     <p{{ ' class=has-balance' if not balance.is_empty() else '' }}>
     <span class="account-cell depth-{{ loop.depth0 }} droptarget{{ ' has-children' if account.children else '' }}" data-account-name="{{ account.name }}">
@@ -69,6 +87,57 @@ Hold Ctrl or Cmd while clicking to expand one level.') }}">
   {% endfor %}
 </ol>
 </tree-table>
+{% set equity_total = equity.fund + equity.stock %}
+{% set equity_cost_total = equity.fund_cost + equity.stock_cost %}
+{% set total = cash.value + equity_total %}
+{% if show_type_info and cash.value != 0 and equity_total != 0 %}
+<div>
+  <table style="font-size: 0.9em;">
+    <thead>
+      <th>Asset Type</th>
+      <th>Market Value</th>
+      <th>Cost</th>
+      <th>Return</th>
+      <th>Rate of Return</th>
+      <th>Percentage</th>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cash</td>
+        <td class="num">{{ cash.value|format_currency('CNY', False) }}</td>
+        <td class="num">{{ cash.value|format_currency('CNY', False) }}</td>
+        <td class="num"></td>
+        <td class="num"></td>
+        <td class="num">{{ "{:.2%}".format(cash.value / total) }}</td>
+      </tr>
+      <tr>
+        <td>Fund</td>
+        <td class="num">{{ (equity.fund)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ equity.fund_cost|format_currency('CNY', False) }}</td>
+        <td class="num">{{ (equity.fund - equity.fund_cost)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ "{:.2%}".format( (equity.fund - equity.fund_cost) / equity.fund_cost ) }}</td>
+        <td class="num">{{ "{:.2%}".format(equity.fund / total) }}</td>
+      </tr>
+      <tr>
+        <td>Stock</td>
+        <td class="num">{{ (equity.stock)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ equity.stock_cost|format_currency('CNY', False) }}</td>
+        <td class="num">{{ (equity.stock - equity.stock_cost)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ "{:.2%}".format( (equity.stock - equity.stock_cost) / equity.stock_cost ) }}</td>
+        <td class="num">{{ "{:.2%}".format(equity.stock / total) }}</td>
+      </tr>
+      <tr>
+        <td>Equity</td>
+        <td class="num">{{ (equity_total)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ equity_cost_total|format_currency('CNY', False) }}</td>
+        <td class="num">{{ (equity_total - equity_cost_total)|format_currency('CNY', False) }}</td>
+        <td class="num">{{ "{:.2%}".format( (equity_total - equity_cost_total) / equity_cost_total ) }}</td>
+        <td class="num">{{ "{:.2%}".format(equity_total / total) }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endif %}
 {% endmacro %}
 
 {% macro render_budget(budget, currency, number=0) %}
