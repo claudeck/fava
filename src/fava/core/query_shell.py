@@ -3,8 +3,7 @@ import contextlib
 import io
 import textwrap
 
-from beancount.core.data import Query
-from beancount.query import query_compile  # type: ignore
+from beancount.query import query_compile
 from beancount.query.query import run_query
 from beancount.query.query_compile import CompilationError
 from beancount.query.query_execute import execute_query
@@ -47,7 +46,7 @@ class QueryShell(BQLShell, FavaModule):
         self.queries = []
 
     def load_file(self):
-        self.queries = self.ledger.all_entries_by_type[Query]
+        self.queries = self.ledger.all_entries_by_type.Query
 
     def add_help(self):
         "Attach help functions for each of the parsed token handlers."
@@ -177,7 +176,7 @@ class QueryShell(BQLShell, FavaModule):
 
         try:
             types, rows = run_query(
-                self.ledger.all_entries,
+                self.ledger.entries,
                 self.ledger.options,
                 query_string,
                 numberify=True,

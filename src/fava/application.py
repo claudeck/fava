@@ -18,11 +18,11 @@ from io import BytesIO
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
 
 import flask
 import markdown2  # type: ignore
 import werkzeug.urls
+from beancount import __version__ as beancount_version
 from beancount.core.account import ACCOUNT_RE
 from beancount.utils.text_utils import replace_numbers  # type: ignore
 from flask import abort
@@ -36,6 +36,7 @@ from flask_babel import Babel  # type: ignore
 from flask_babel import get_translations
 from werkzeug.utils import secure_filename
 
+from fava import __version__ as fava_version
 from fava import LANGUAGES
 from fava import template_filters
 from fava.context import g
@@ -63,9 +64,13 @@ app = Flask(  # pylint: disable=invalid-name
 )
 app.register_blueprint(json_api, url_prefix="/<bfile>/api")
 
-app.json_encoder = FavaJSONEncoder
-app.jinja_options["extensions"].append("jinja2.ext.do")
-app.jinja_options["extensions"].append("jinja2.ext.loopcontrols")
+app.json_encoder = FavaJSONEncoder  # type: ignore
+try:
+    jinja_extensions = app.jinja_options.setdefault("extensions", [])
+except TypeError:  # Flask <2
+    jinja_extensions = app.jinja_options["extensions"]
+jinja_extensions.append("jinja2.ext.do")
+jinja_extensions.append("jinja2.ext.loopcontrols")
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
@@ -124,15 +129,16 @@ BABEL = Babel(app)
 
 
 @BABEL.localeselector
-def get_locale() -> Optional[str]:
+def get_locale() -> str:
     """Get locale.
 
     Returns:
         The locale that should be used for Babel. If not given as an option to
         Fava, guess from browser.
     """
-    if g.ledger.fava_options["language"]:
-        return g.ledger.fava_options["language"]
+    lang = g.ledger.fava_options["language"]
+    if lang is not None:
+        return lang
     return request.accept_languages.best_match(["en"] + LANGUAGES)
 
 
@@ -252,12 +258,8 @@ def _pull_beancount_file(_, values) -> None:
             # one of the file slugs changed, update the mapping
             update_ledger_slugs(app.config["LEDGERS"].values())
         g.ledger = app.config["LEDGERS"][g.beancount_file_slug]
-        g.conversion = request.args.get(
-            "conversion", g.ledger.fava_options["conversion"]
-        )
-        g.interval = Interval.get(
-            request.args.get("interval", g.ledger.fava_options["interval"])
-        )
+        g.conversion = request.args.get("conversion", "at_cost")
+        g.interval = Interval.get(request.args.get("interval", "month"))
 
 
 @app.errorhandler(FavaAPIException)
@@ -360,7 +362,12 @@ def download_query(result_format):
     )
 
     filename = f"{secure_filename(name.strip())}.{result_format}"
-    return send_file(data, as_attachment=True, attachment_filename=filename)
+    try:
+        return send_file(data, as_attachment=True, download_name=filename)
+    except TypeError:  # Flask <2
+        return send_file(
+            data, as_attachment=True, attachment_filename=filename
+        )
 
 
 @app.route("/<bfile>/download-journal/")
@@ -369,7 +376,12 @@ def download_journal():
     now = datetime.datetime.now().replace(microsecond=0)
     filename = f"journal_{now.isoformat()}.beancount"
     data = BytesIO(bytes(render_template("beancount_file"), "utf8"))
-    return send_file(data, as_attachment=True, attachment_filename=filename)
+    try:
+        return send_file(data, as_attachment=True, download_name=filename)
+    except TypeError:  # Flask <2
+        return send_file(
+            data, as_attachment=True, attachment_filename=filename
+        )
 
 
 @app.route("/<bfile>/help/", defaults={"page_slug": "_index"})
@@ -386,7 +398,11 @@ def help_page(page_slug):
         "_layout.html",
         active_page="help",
         page_slug=page_slug,
-        help_html=render_template_string(html),
+        help_html=render_template_string(
+            html,
+            beancount_version=beancount_version,
+            fava_version=fava_version,
+        ),
         HELP_PAGES=HELP_PAGES,
     )
 

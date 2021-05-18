@@ -1,3 +1,16 @@
+<script lang="ts" context="module">
+  const imageExtensions = [
+    "gif",
+    "jpg",
+    "jpeg",
+    "png",
+    "svg",
+    "webp",
+    "bmp",
+    "ico",
+  ];
+</script>
+
 <script lang="ts">
   import Editor from "../editor/Editor.svelte";
   import { fetch, handleText } from "../lib/fetch";
@@ -6,7 +19,7 @@
 
   export let filename: string;
 
-  $: extension = ext(filename);
+  $: extension = ext(filename).toLowerCase();
   $: url = `${$baseURL}document/?filename=${filename}`;
 </script>
 
@@ -18,6 +31,8 @@
   {:then value}
     <Editor {value} />
   {/await}
+{:else if imageExtensions.includes(extension)}
+  <img src={url} alt={filename} />
 {:else}
   Preview for file `{filename}` with file type `{extension}` is not implemented
 {/if}
@@ -26,5 +41,10 @@
   object {
     width: 100%;
     height: 100%;
+  }
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 </style>
