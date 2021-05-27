@@ -36,6 +36,7 @@ from beancount.core.prices import build_price_map
 from beancount.core.prices import get_all_prices
 from beancount.parser.options import get_account_types  # type: ignore
 from beancount.utils.encryption import is_encrypted_file  # type: ignore
+from beancount.core.data import Custom
 
 from fava.core._compat import FLAG_UNREALIZED
 from fava.core.accounts import AccountDict
@@ -253,7 +254,7 @@ class FavaLedger:
 
         self.filter(True)
 
-        self.custom_labels = self.get_custom_labels(entries_by_type[Custom])
+        self.custom_labels = self.get_custom_labels(self.all_entries_by_type.Custom)
 
     def get_custom_labels(self, custom_entries: List[Custom]) -> Dict[str, str]:
         """Get custom labels options"""
