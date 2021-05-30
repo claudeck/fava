@@ -49,7 +49,7 @@ class TreeNode:
     def serialise(
         self,
         conversion: str,
-        price_map: PriceMap,
+        ledger: "FavaLedger",
         end: Optional[datetime.date],
     ) -> SerialisedTreeNode:
         """Serialise the account.
