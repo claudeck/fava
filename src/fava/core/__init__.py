@@ -381,7 +381,10 @@ class FavaLedger:
         interval: date.Interval,
         account_name: str,
         accumulate: bool = False,
-    ):
+    ) -> Tuple[
+        List[realization.RealAccount],
+        List[Tuple[datetime.date, datetime.date]],
+    ]:
         """Balances by interval.
 
         Arguments:
@@ -529,7 +532,11 @@ class FavaLedger:
         """List all prices."""
         all_prices = get_all_prices(self.price_map, (base, quote))
 
-        if self.filters.time:
+        if (
+            self.filters.time
+            and self.filters.time.begin_date is not None
+            and self.filters.time.end_date is not None
+        ):
             return [
                 (date, price)
                 for date, price in all_prices
@@ -564,7 +571,9 @@ class FavaLedger:
         entry = self.get_entry(entry_hash)
         value = entry.meta[metadata_key]
 
-        paths = [os.path.join(os.path.dirname(entry.meta["filename"]), value)]
+        paths: List[str] = [
+            os.path.join(os.path.dirname(entry.meta["filename"]), value)
+        ]
         paths.extend(
             [
                 self.join_path(
