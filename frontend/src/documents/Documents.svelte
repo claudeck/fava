@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { group } from "d3-array";
+
   import { moveDocument } from "../api";
   import AccountInput from "../entry-forms/AccountInput.svelte";
   import { _ } from "../i18n";
@@ -10,16 +12,17 @@
   import Accounts from "./Accounts.svelte";
   import DocumentPreview from "./DocumentPreview.svelte";
   import Table from "./Table.svelte";
+  import type { Document } from "./types";
 
-  type Document = { account: string; filename: string; date: string };
   type MoveDetails = { account: string; filename: string; newName: string };
 
   export let data: Document[];
 
+  $: grouped = group(data, (d) => d.account);
   $: node = stratify(
-    new Set(data.map((e) => e.account)),
-    (s) => s,
-    (name) => ({ name })
+    grouped.entries(),
+    ([s]) => s,
+    (name, d) => ({ name, count: d?.[1].length ?? 0 })
   );
 
   let selected: Document;
